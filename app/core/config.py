@@ -12,9 +12,10 @@ class Settings(BaseSettings):
     groq_api_key: str = ""
     tavily_api_key: str = ""
     pinecone_api_key: str = ""
+    hf_token: str = ""
     pinecone_index_name: str = "fde-hr-policy-rag"
     pinecone_namespace: str = "company-hr-kb"
-    embedding_model: str = "all-minilm-l6-v2"
+    embedding_model: str = "bge-small-en-v1.5"
     openai_model: str = "gpt-4o-mini"
     groq_model: str = "openai/gpt-oss-20b"
     top_k: int = 4
