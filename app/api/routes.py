@@ -47,7 +47,7 @@ async def ingest(file: UploadFile = File(...), x_admin_key: str = Header(default
     suffix = Path(file.filename or "").suffix.lower()
     if suffix not in SUPPORTED:
         raise HTTPException(status_code=400, detail=f"Supported: {', '.join(sorted(SUPPORTED))}")
-    upload_dir = Path(settings.upload_dir)
+    upload_dir = Path("/tmp/uploads") if __import__("os").environ.get("VERCEL") else Path(settings.upload_dir)
     upload_dir.mkdir(parents=True, exist_ok=True)
     dest = upload_dir / Path(file.filename).name
     dest.write_bytes(await file.read())
