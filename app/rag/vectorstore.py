@@ -87,7 +87,10 @@ def ensure_index():
     if not settings.pinecone_api_key:
         raise RuntimeError("PINECONE_API_KEY is missing")
     desired_dimension = get_embedding_dimension()
-    pc = Pinecone(api_key=settings.pinecone_api_key)
+    pc = Pinecone(
+    api_key=settings.pinecone_api_key,
+    pool_threads=1,
+)
     names = [x["name"] for x in pc.list_indexes()]
 
     if settings.pinecone_index_name in names:
@@ -109,7 +112,10 @@ def ensure_index():
         while not pc.describe_index(settings.pinecone_index_name).status["ready"]:
             time.sleep(1)
 
-    return pc.Index(settings.pinecone_index_name)
+    return pc.Index(
+    settings.pinecone_index_name,
+    pool_threads=1,
+)
 
 
 
