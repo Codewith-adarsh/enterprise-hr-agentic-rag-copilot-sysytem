@@ -7,7 +7,14 @@ from app.core.config import get_settings
 settings = get_settings()
 
 
+def _is_vercel() -> bool:
+    return bool(__import__("os").environ.get("VERCEL"))
+
+
 def init_db() -> None:
+    if _is_vercel():
+        return
+
     con = sqlite3.connect(settings.audit_db_path)
     con.execute(
         """CREATE TABLE IF NOT EXISTS query_audit (
@@ -22,12 +29,19 @@ def init_db() -> None:
     con.close()
 
 
-
 def write_audit(question: str, source_used: str, trace: list[str]) -> None:
+    if _is_vercel():
+        return
+
     con = sqlite3.connect(settings.audit_db_path)
     con.execute(
         "INSERT INTO query_audit(created_at, question, source_used, trace_json) VALUES (?, ?, ?, ?)",
-        (datetime.now(timezone.utc).isoformat(), question, source_used, json.dumps(trace)),
+        (
+            datetime.now(timezone.utc).isoformat(),
+            question,
+            source_used,
+            json.dumps(trace),
+        ),
     )
     con.commit()
     con.close()
