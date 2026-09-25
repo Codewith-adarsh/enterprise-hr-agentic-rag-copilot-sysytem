@@ -1,6 +1,6 @@
 import time
 from pinecone import Pinecone , ServerlessSpec
-from sentence_transformers import SentenceTransformer
+from huggingface_hub import InferenceClient
 from langchain_pinecone import PineconeVectorStore
 from app.core.config import get_settings
 
@@ -15,7 +15,7 @@ EMBEDDING_DIMENSIONS = {
     "text-embedding-3-small": 1536,
     "text-embedding-3-large": 3072,
     "text-embedding-ada-002": 1536,
-    "all-minilm-l6-v2": 384,
+    "bge-small-en-v1.5": 384,
 }
 
 
@@ -40,25 +40,44 @@ def get_embedding_dimension(model_name: str | None = None) -> int:
     )
 
 
-class HuggingFaceEmbeddings:
+class HuggingFaceAPIEmbeddings:
     def __init__(self, model_name: str):
-        self.model = SentenceTransformer(model_name)
+        if not settings.hf_token:
+            raise RuntimeError("HF_TOKEN is missing")
+
+        self.client = InferenceClient(
+            provider="hf-inference",
+            api_key=settings.hf_token,
+        )
+        self.model_name = model_name
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
-        vectors = self.model.encode(texts, normalize_embeddings=True)
-        return vectors.tolist()
+        vectors = []
+
+        for text in texts:
+            vector = self.client.feature_extraction(
+                text,
+                model=self.model_name,
+            )
+
+            vectors.append(vector.tolist())
+
+        return vectors
 
     def embed_query(self, text: str) -> list[float]:
-        vector = self.model.encode(text, normalize_embeddings=True)
-        return vector.tolist()
+        vector = self.client.feature_extraction(
+            text,
+            model=self.model_name,
+        )
 
+        return vector.tolist()
 
 def get_embeddings():
     global _embeddings
 
     if _embeddings is None:
-        _embeddings = HuggingFaceEmbeddings(
-            "sentence-transformers/all-MiniLM-L6-v2"
+        _embeddings = HuggingFaceAPIEmbeddings(
+            "BAAI/bge-small-en-v1.5"
         )
 
     return _embeddings
